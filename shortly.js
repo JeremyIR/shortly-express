@@ -13,6 +13,7 @@ var Click = require('./app/models/click');
 var passport = require('passport');
 var authenticate = require('express-authentication');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 ///
 var app = express();
 
@@ -88,10 +89,62 @@ app.post('/links', util.checkUser, function(req, res) {
 app.get('/login', function(req, res) {
   res.render('login');
 });
- 
+
+app.post('/login', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({ username: username })
+    .fetch()
+    .then(function(user) {
+      if (!user) {
+        res.redirect('/login');
+      } else {
+        // BASIC VERSION
+        bcrypt.compare(password, user.get('password'), function(err, match) {
+          if (match) {
+            util.createSession(req, res, user);
+          } else {
+            res.redirect('/login');
+          }
+        });
+      }
+    });
+});
+
+app.get('/logout', function(req, res) {
+  req.session.destroy(function() {
+    res.redirect('/login');
+  });
+});
+
 app.get('/signup', function(req, res) {
   res.render('signup');
 });
+
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({ username: username })
+    .fetch()
+    .then(function(user) {
+      if (!user) {
+        bcrypt.hash(password, null, null, function(err, hash) {
+          Users.create({
+            username: username,
+            password: hash
+          }).then(function(user) {
+              util.createSession(req, res, user);
+          });
+        });
+      } else {
+        console.log('Account already exists');
+        res.redirect('/signup');
+      }
+    });
+});
+
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
@@ -117,6 +170,6 @@ app.get('/*', function(req, res) {
     }
   });
 });
-
 console.log('Shortly is listening on 4568');
 app.listen(4568);
+
