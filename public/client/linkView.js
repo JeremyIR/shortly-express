@@ -1,10 +1,10 @@
 Shortly.LinkView = Backbone.View.extend({
-  className: 'link',
+    className: 'link',
 
-  template: Templates['link'],
+    template: Templates['link'],
 
-  render: function() {
-    this.$el.html(this.template(this.model.attributes));
-    return this;
-  }
+    render: function() {
+        this.$el.html(this.template(this.model.attributes));
+        return this;
+    }
 });
